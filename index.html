@@ -17,29 +17,29 @@
   </script>
 </head>
 <body>
-  <main id="viewer" aria-label="Interactive 3D gallery model"></main>
+  <main id="viewer" aria-label="Interactive 3D gallery"></main>
 
   <section id="loadingPanel" class="status-panel" role="status" aria-live="polite">
     <div class="spinner" aria-hidden="true"></div>
     <div class="status-content">
       <div class="status-row">
         <strong>Loading gallery</strong>
-        <span id="progressText">0%</span>
+        <span id="progressText"></span>
       </div>
       <div class="progress-track" aria-hidden="true">
-        <div id="progressBar" class="progress-bar"></div>
+        <div id="progressBar" class="progress-bar indeterminate"></div>
       </div>
-      <div id="loadingDetail" class="status-detail">Downloading model.glb</div>
+      <div id="loadingDetail" class="status-detail">Building room and loading detailed CC0 assets…</div>
     </div>
   </section>
 
   <section id="errorPanel" class="error-panel" role="alert" hidden>
-    <strong>Unable to load the 3D model</strong>
-    <p id="errorMessage">Check that model.glb exists beside index.html.</p>
+    <strong>Unable to build the gallery</strong>
+    <p id="errorMessage">The browser could not initialise the 3D scene.</p>
   </section>
 
   <div id="controlHint" class="control-hint" hidden>
-    Drag to rotate · Scroll or pinch to zoom
+    Drag to look around · Scroll/pinch to zoom · Click a painting to focus
   </div>
 
   <script type="module" src="./app.js"></script>
