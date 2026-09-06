@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111318">
+  <title>Gallery</title>
+  <link rel="stylesheet" href="./styles.css">
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <main id="viewer" aria-label="Interactive 3D gallery model"></main>
+
+  <section id="loadingPanel" class="status-panel" role="status" aria-live="polite">
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="status-content">
+      <div class="status-row">
+        <strong>Loading gallery</strong>
+        <span id="progressText">0%</span>
+      </div>
+      <div class="progress-track" aria-hidden="true">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <div id="loadingDetail" class="status-detail">Downloading model.glb</div>
+    </div>
+  </section>
+
+  <section id="errorPanel" class="error-panel" role="alert" hidden>
+    <strong>Unable to load the 3D model</strong>
+    <p id="errorMessage">Check that model.glb exists beside index.html.</p>
+  </section>
+
+  <div id="controlHint" class="control-hint" hidden>
+    Drag to rotate · Scroll or pinch to zoom
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
