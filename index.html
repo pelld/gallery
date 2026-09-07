@@ -1,47 +1,89 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111318">
-  <title>Gallery</title>
-  <link rel="stylesheet" href="./styles.css">
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes">
+<meta name="theme-color" content="#1a0e0b">
+<title>Grand Red Gallery</title>
+<style>
+  :root {
+    --ui-bg: rgba(16,12,10,.80);
+    --ui-line: rgba(255,255,255,.16);
+    --ui-text: #f7f1e8;
   }
-  </script>
+  * { box-sizing: border-box; }
+  html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#120d0b; }
+  body { font-family: Georgia, "Times New Roman", serif; color: var(--ui-text); }
+  #viewport { position:fixed; inset:0; overflow:hidden; touch-action:none; cursor:grab; background:#100b09; }
+  #viewport.dragging { cursor:grabbing; }
+  #scene { position:absolute; width:1536px; height:1024px; transform-origin:0 0; will-change:transform; user-select:none; }
+  #room { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; pointer-events:none; }
+  .painting { position:absolute; display:block; text-decoration:none; color:inherit; -webkit-tap-highlight-color:transparent; }
+  .painting:hover, .painting:focus-visible { transform:none; filter:none; outline:none; }
+  .opening { position:absolute; left:var(--open-left); top:var(--open-top); width:calc(100% - var(--open-left) - var(--open-right)); height:calc(100% - var(--open-top) - var(--open-bottom)); overflow:hidden; z-index:2; box-shadow:inset 0 0 0 1px rgba(0,0,0,.45); }
+  .art { display:block; width:100%; height:100%; object-fit:fill; pointer-events:none; }
+  .frame { position:absolute; inset:0; z-index:3; pointer-events:none; background-image:url("assets/frames.webp"); background-repeat:no-repeat; filter:drop-shadow(0 10px 12px rgba(0,0,0,.30)); }
+
+  /* Measured central red wall: x 293–1242, y 322–726. */
+  #monet { left:338px; top:340px; width:190px; height:192px; --open-left:16.851%; --open-top:22.560%; --open-right:16.851%; --open-bottom:26.427%; }
+  #monet .frame { background-size:633.333px 568.889px; background-position:-10.556px -45.511px; }
+  #nightwatch { left:662px; top:340px; width:210px; height:203px; --open-left:15.815%; --open-top:20.166%; --open-right:15.953%; --open-bottom:20.718%; }
+  #nightwatch .frame { background-size:700px 601.481px; background-position:-245px -48.119px; }
+  #turner { left:1006px; top:340px; width:190px; height:171px; --open-left:10.773%; --open-top:16.667%; --open-right:10.773%; --open-bottom:18.508%; }
+  #turner .frame { background-size:633.333px 506.667px; background-position:-432.778px -40.533px; }
+  #meninas { left:413px; top:564px; width:126px; height:144px; --open-left:17.736%; --open-top:17.475%; --open-right:17.736%; --open-bottom:17.689%; }
+  #meninas .frame { background-size:525px 320px; background-position:-24.5px -168px; }
+  #starry { left:693px; top:554px; width:150px; height:154px; --open-left:19.751%; --open-top:25.875%; --open-right:19.682%; --open-bottom:27.532%; }
+  #starry .frame { background-size:500px 456.296px; background-position:-175px -264.652px; }
+  #milkmaid { left:997px; top:563px; width:126px; height:145px; --open-left:18.538%; --open-top:19.258%; --open-right:18.717%; --open-bottom:19.544%; }
+  #milkmaid .frame { background-size:525px 322.222px; background-position:-374.5px -169.167px; }
+
+  .controls { position:fixed; right:12px; top:12px; z-index:20; display:flex; gap:7px; }
+  .control { width:40px; height:40px; border-radius:8px; border:1px solid var(--ui-line); background:var(--ui-bg); color:var(--ui-text); font:600 20px/1 system-ui,sans-serif; cursor:pointer; backdrop-filter:blur(6px); }
+  .control:hover { background:rgba(35,24,19,.92); }
+  #zoomReadout { position:fixed; right:15px; top:61px; z-index:20; min-width:72px; padding:5px 7px; border-radius:6px; text-align:center; background:rgba(17,12,10,.68); border:1px solid rgba(255,255,255,.12); color:#e9dfd1; font:11px/1 system-ui,sans-serif; pointer-events:none; }
+  #hint { position:fixed; left:12px; bottom:12px; z-index:20; max-width:min(620px,calc(100vw - 24px)); padding:8px 10px; border:1px solid var(--ui-line); border-radius:7px; background:var(--ui-bg); color:#eee5d8; font:12px/1.35 system-ui,sans-serif; backdrop-filter:blur(6px); }
+  #hint button { margin-left:7px; border:0; background:transparent; color:#fff; cursor:pointer; font-weight:700; }
+  @media (max-width:700px) { .controls{right:8px;top:8px}.control{width:38px;height:38px}#zoomReadout{right:10px;top:54px}#hint{left:8px;bottom:8px;max-width:calc(100vw - 16px)} }
+</style>
 </head>
 <body>
-  <main id="viewer" aria-label="Interactive 3D gallery"></main>
-
-  <section id="loadingPanel" class="status-panel" role="status" aria-live="polite">
-    <div class="spinner" aria-hidden="true"></div>
-    <div class="status-content">
-      <div class="status-row">
-        <strong>Loading gallery</strong>
-        <span id="progressText"></span>
-      </div>
-      <div class="progress-track" aria-hidden="true">
-        <div id="progressBar" class="progress-bar indeterminate"></div>
-      </div>
-      <div id="loadingDetail" class="status-detail">Building room and loading detailed CC0 assets…</div>
-    </div>
-  </section>
-
-  <section id="errorPanel" class="error-panel" role="alert" hidden>
-    <strong>Unable to build the gallery</strong>
-    <p id="errorMessage">The browser could not initialise the 3D scene.</p>
-  </section>
-
-  <div id="controlHint" class="control-hint" hidden>
-    Drag to look around · Scroll/pinch to zoom · Right-drag/two-finger drag to pan
+<div id="viewport" aria-label="Zoomable grand red museum gallery">
+  <div id="scene">
+    <img id="room" src="assets/room.jpg" alt="Grand ornate red museum gallery" draggable="false">
+    <a id="monet" class="painting" href="https://commons.wikimedia.org/wiki/File:Monet_-_Impression,_Sunrise.jpg" target="_blank" rel="noopener" aria-label="Monet — Impression, Sunrise"><div class="opening" style="background:#d7cbb6"><img class="art" alt="Monet — Impression, Sunrise" draggable="false" src="https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/Monet_-_Impression%2C_Sunrise.jpg/3840px-Monet_-_Impression%2C_Sunrise.jpg"></div><div class="frame" aria-hidden="true"></div></a>
+    <a id="nightwatch" class="painting" href="https://commons.wikimedia.org/wiki/File:The_Night_Watch.jpg" target="_blank" rel="noopener" aria-label="Rembrandt — The Night Watch"><div class="opening" style="background:#111"><img class="art" alt="Rembrandt — The Night Watch" draggable="false" src="https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/The_Night_Watch.jpg/3840px-The_Night_Watch.jpg"></div><div class="frame" aria-hidden="true"></div></a>
+    <a id="turner" class="painting" href="https://commons.wikimedia.org/wiki/File:Turner_-_The_Fighting_Temeraire.jpg" target="_blank" rel="noopener" aria-label="Turner — The Fighting Temeraire"><div class="opening" style="background:#111"><img class="art" alt="Turner — The Fighting Temeraire" draggable="false" src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Turner_-_The_Fighting_Temeraire.jpg"></div><div class="frame" aria-hidden="true"></div></a>
+    <a id="meninas" class="painting" href="https://commons.wikimedia.org/wiki/File:Las_Meninas,_by_Diego_Vel%C3%A1zquez,_from_Prado_in_Google_EarthFXD.jpg" target="_blank" rel="noopener" aria-label="Velázquez — Las Meninas"><div class="opening" style="background:#111"><img class="art" alt="Velázquez — Las Meninas" draggable="false" src="https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b1/Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_EarthFXD.jpg/3840px-Las_Meninas%2C_by_Diego_Vel%C3%A1zquez%2C_from_Prado_in_Google_EarthFXD.jpg"></div><div class="frame" aria-hidden="true"></div></a>
+    <a id="starry" class="painting" href="https://commons.wikimedia.org/wiki/File:Vincent_Van_Gogh_Starry_Night.jpg" target="_blank" rel="noopener" aria-label="Van Gogh — The Starry Night"><div class="opening" style="background:#111"><img class="art" alt="Van Gogh — The Starry Night" draggable="false" src="https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/3840px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg"></div><div class="frame" aria-hidden="true"></div></a>
+    <a id="milkmaid" class="painting" href="https://commons.wikimedia.org/wiki/File:Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg" target="_blank" rel="noopener" aria-label="Vermeer — The Milkmaid"><div class="opening" style="background:#111"><img class="art" alt="Vermeer — The Milkmaid" draggable="false" src="https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg/3840px-Johannes_Vermeer_-_Het_melkmeisje_-_Google_Art_Project.jpg"></div><div class="frame" aria-hidden="true"></div></a>
   </div>
-
-  <script type="module" src="./app.js"></script>
+</div>
+<div class="controls" aria-label="Zoom controls"><button class="control" id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button><button class="control" id="reset" title="Reset view" aria-label="Reset view">↺</button><button class="control" id="zoomIn" title="Zoom in" aria-label="Zoom in">+</button></div>
+<div id="zoomReadout">100%</div>
+<div id="hint">Scroll or pinch to zoom · drag to pan · click a painting to open its source page.<button id="closeHint" aria-label="Hide instructions">×</button></div>
+<script>
+(() => {
+'use strict';
+const viewport=document.getElementById('viewport'),scene=document.getElementById('scene'),zoomReadout=document.getElementById('zoomReadout');
+const SCENE_W=1536,SCENE_H=1024,MIN_ZOOM=1,MAX_ZOOM=5;
+let fitScale=1,zoom=1,x=0,y=0;
+function render(){const scale=fitScale*zoom;scene.style.transform=`translate(${x}px, ${y}px) scale(${scale})`;zoomReadout.textContent=`${Math.round(zoom*100)}%`;}
+function resetView(){fitScale=Math.min(viewport.clientWidth/SCENE_W,viewport.clientHeight/SCENE_H);zoom=1;const scale=fitScale*zoom;x=(viewport.clientWidth-SCENE_W*scale)/2;y=(viewport.clientHeight-SCENE_H*scale)/2;render();}
+function zoomAt(clientX,clientY,factor){const oldScale=fitScale*zoom,nextZoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,zoom*factor));if(nextZoom===zoom)return;const sceneX=(clientX-x)/oldScale,sceneY=(clientY-y)/oldScale;zoom=nextZoom;const newScale=fitScale*zoom;x=clientX-sceneX*newScale;y=clientY-sceneY*newScale;render();}
+viewport.addEventListener('wheel',event=>{event.preventDefault();zoomAt(event.clientX,event.clientY,event.deltaY<0?1.12:1/1.12);},{passive:false});
+const pointers=new Map();let dragStart=null,pinchStartDistance=0,pinchStartZoom=1,pinchScenePoint=null;
+function pointerDistance(){const pts=[...pointers.values()];if(pts.length<2)return 0;return Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y);}
+function pointerMidpoint(){const pts=[...pointers.values()];return{x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};}
+viewport.addEventListener('pointerdown',event=>{pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});viewport.setPointerCapture(event.pointerId);if(pointers.size===1){dragStart={px:event.clientX,py:event.clientY,x,y};viewport.classList.add('dragging');}if(pointers.size===2){pinchStartDistance=pointerDistance();pinchStartZoom=zoom;const mid=pointerMidpoint(),scale=fitScale*zoom;pinchScenePoint={sceneX:(mid.x-x)/scale,sceneY:(mid.y-y)/scale};}});
+viewport.addEventListener('pointermove',event=>{if(!pointers.has(event.pointerId))return;pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});if(pointers.size===1&&dragStart){x=dragStart.x+(event.clientX-dragStart.px);y=dragStart.y+(event.clientY-dragStart.py);render();}if(pointers.size===2&&pinchStartDistance>0&&pinchScenePoint){const distance=pointerDistance();zoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,pinchStartZoom*distance/pinchStartDistance));const mid=pointerMidpoint(),scale=fitScale*zoom;x=mid.x-pinchScenePoint.sceneX*scale;y=mid.y-pinchScenePoint.sceneY*scale;render();}});
+function endPointer(event){pointers.delete(event.pointerId);if(pointers.size===0){dragStart=null;pinchStartDistance=0;pinchScenePoint=null;viewport.classList.remove('dragging');}else if(pointers.size===1){const only=[...pointers.values()][0];dragStart={px:only.x,py:only.y,x,y};pinchStartDistance=0;pinchScenePoint=null;}}
+viewport.addEventListener('pointerup',endPointer);viewport.addEventListener('pointercancel',endPointer);
+document.getElementById('zoomIn').addEventListener('click',()=>zoomAt(viewport.clientWidth/2,viewport.clientHeight/2,1.22));
+document.getElementById('zoomOut').addEventListener('click',()=>zoomAt(viewport.clientWidth/2,viewport.clientHeight/2,1/1.22));
+document.getElementById('reset').addEventListener('click',resetView);document.getElementById('closeHint').addEventListener('click',()=>{document.getElementById('hint').style.display='none';});
+document.querySelectorAll('.painting').forEach(painting=>painting.addEventListener('pointerdown',event=>event.stopPropagation()));window.addEventListener('resize',resetView);resetView();
+})();
+</script>
 </body>
 </html>
